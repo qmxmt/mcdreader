@@ -1,5 +1,6 @@
 import ij.plugin.*;
 import ij.*;
+import ij.text.*;
 import ij.process.*;
 import ij.io.*;
 import java.net.*;
@@ -17,6 +18,26 @@ public class mcd_reader implements PlugIn {
 		if (name==null)
 			return;
 		String dir = od.getDirectory();
+                MCDOpener mcd = new MCDOpener();
+                int status = mcd.read(dir+name);
+                StringBuilder sb = new StringBuilder();
+                sb.append(" ");
+                sb.append(mcd.width);
+                sb.append(" ");
+                sb.append(mcd.height);
+                sb.append(" ");
+                sb.append(mcd.zsize);
+                sb.append(" ");
+                sb.append(mcd.num_samples);
+                sb.append(" ");
+                sb.append(mcd.num_proj);
+                sb.append(" ");
+                sb.append(mcd.num_blocks);
+                sb.append(" ");
+                sb.append(mcd.num_slices);
+                String data = sb.toString();
+                new TextWindow("Data for " +name, "wibble", data, 450, 500);
+                 
 	}
 
 }
@@ -39,40 +60,93 @@ class MCDOpener {
     public static final int STATUS_OPEN_ERROR = 2;
 
 	protected BufferedInputStream in;
-    protected int status;
-    protected short width;            // full image width
-    protected short height;           // full image height
-	protected short zsize;			  // Z height
+        protected int status;
+        protected short width;            // full image width
+        protected short height;           // full image height
+	protected short zsize;            // Z height
 	protected short num_samples;	 
 	protected short num_proj;
 	protected short num_blocks;
 	protected short num_slices;
 	protected byte[] header = new byte[512]; 
-    protected Vector frames;
+        protected int rubbish;
+        protected Vector frames;
    
     
-    init();
-    readHeader();
-    
-    StringBuilder sb = new StringBuilder();
-    sb.append(" ");
-    sb.append(width);
-    sb.append(" ");
-    sb.append(height);
-    sb.append(" ");
-    sb.append(zsize);
-    sb.append(" ");
-    sb.append(num_samples);
-    sb.append(" ");
-    sb.append(num_proj);
-    sb.append(" ");
-    sb.append(num_blocks);
-    sb.append(" ");
-    sb.append(numslices);
-    sb.append(" ");
+     /**
+     * Reads MCD file from specified source (file or URL string)
+     *
+     * @param name File source string
+     * @return int read status code
+     */
+    public int read(String name) {
+        status = STATUS_OK;
+        try {
+            name = name.trim();
+            if (name.indexOf("://") > 0) {
+                URL url = new URL(name);
+                in = new BufferedInputStream(url.openStream());
+            } else {
+                in = new BufferedInputStream(new FileInputStream(name));
+            }
+            status = read(in);
+        } catch (IOException e) {
+            status = STATUS_OPEN_ERROR;
+        }
 
-    String data = sb.toString();
-    new TextWindow("Data for " +name, "wibble", data, 450, 500);
+        return status;
+    }
+        
+        
+     /**
+     * Reads MCD image from stream
+     *
+     * @param BufferedInputStream containing GIF file.
+     * @return int read status code
+     */
+    public int read(BufferedInputStream is) {
+        init();
+        if (is != null) {
+            in = is;
+            readHeader();
+            if (!err()) {
+               // readContents();
+               // if (frameCount < 0)
+                    status = STATUS_FORMAT_ERROR;
+            }
+        } else {
+            status = STATUS_OPEN_ERROR;
+        }
+        try {
+            is.close();
+        } catch (IOException e) {}
+        return status;
+    }  
+        
+        
+        
+        
+
+    
+   // StringBuilder sb = new StringBuilder();
+    //sb.append(" ");
+    //sb.append(width);
+    //sb.append(" ");
+    //sb.append(height);
+    //sb.append(" ");
+    //sb.append(zsize);
+    //sb.append(" ");
+    //sb.append(num_samples);
+    //sb.append(" ");
+    //sb.append(num_proj);
+    //sb.append(" ");
+    //sb.append(num_blocks);
+    //sb.append(" ");
+    //sb.append(numslices);
+    //sb.append(" ");
+
+    //String data = sb.toString();
+    //new TextWindow("Data for " +name, "wibble", data, 450, 500);
     
 
    /**
@@ -112,7 +186,7 @@ class MCDOpener {
      */
     protected short readshort() {
         // read 16-bit value, LSB first
-        return read() | (read() << 8);
+        return (short) (read() | (read() << 8));
     }	
     
 	
@@ -128,9 +202,9 @@ class MCDOpener {
      comment[64],spare_char[192];
 
      */
-    protected int readHeader() {
+    protected void readHeader() {
         short junk;
-		width = readshort();
+		width =  readshort();
 		height = readshort();
 		zsize = readshort();
 		junk = readshort();	//lmarg
@@ -145,8 +219,5 @@ class MCDOpener {
 		num_slices = readshort();
 		
     }
-
-
-
 	
 }
