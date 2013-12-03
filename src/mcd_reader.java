@@ -1,13 +1,11 @@
-import ij.plugin.*;
-import ij.*;
-import ij.text.*;
-import ij.process.*;
-import ij.io.*;
-import java.net.*;
-import java.io.*;
-import java.util.*;
-import java.awt.*;
-import java.awt.image.*;
+import ij.io.OpenDialog;
+import ij.plugin.PlugIn;
+import ij.text.TextWindow;
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.URL;
+import java.util.Vector;
 
 /* Queen Mary MCD file reader: David Mills 2013 */
 
